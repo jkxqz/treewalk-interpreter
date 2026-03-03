@@ -14,7 +14,7 @@ class Lox:
     def runFile(path: str):
         # read entire file as one string
         with open(path, 'r') as f:
-            _bytes = f.read()
+            _bytes: str = f.read()
         Lox.run(_bytes)
         if Lox.hadError: sys.exit(65)
 
