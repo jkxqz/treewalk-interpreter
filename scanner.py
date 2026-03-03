@@ -68,8 +68,6 @@ class Scanner:
             case '>': self.addToken(TokenType.GREATER_EQUAL if self._match('=') else TokenType.GREATER)
             case '/': 
                 if self._match('/'):
-                    # while (self.peek() != '\n' and not self.isAtEnd()):
-                    # my possible alternative
                      while (self.peek() not in ('\n', '\0')):
                         self.advance()
                 else:
@@ -107,9 +105,6 @@ class Scanner:
         while (self.isDigit(self.peek())):
             self.advance()
         # look for fractional part
-        #print(self.source[self.start:self.current], self.peek()=='.',
-        #      self.peekNext(), 99)
-        #print(99, self.peek(), self.peekNext(), 99)
         if (self.peek() == '.' and self.isDigit(self.peekNext())):
             # consume the '.'
             self.advance()
@@ -124,9 +119,13 @@ class Scanner:
     
 
     def string(self) -> None:
-        while self.peek() != '"' and not self.isAtEnd():
-            if self.peek() != '\n': self.line += 1
+        while self.peek() not in ('"', '\0'):
+            if self.peek() == '\n': self.line += 1
             self.advance()
+        if self.isAtEnd():
+            from lox import Lox
+            Lox.error(self.line, "Unterminated string.")
+            return
         self.advance() # the closing "
         # trim surrounding quotes
         value: str = self.source[self.start+1:self.current-1]
