@@ -1,14 +1,24 @@
 import sys
 from scanner import Scanner
-
+from token_ import Token
+from tokentype import TokenType
+from expr import Expr
+from astPrinter import AstPrinter
+from typing import no_type_check
 class Lox:
 
     @staticmethod
+    @no_type_check
     def run(source: str):
+        from parser import Parser
         scanner = Scanner(source)
         tokens = scanner.scanTokens()
-        for token in tokens:
-            print(token, flush=True)
+        #for token in tokens:
+        #    print(token, flush=True)
+        parser: Parser = Parser(tokens)
+        expression: Expr = parser.parse()
+        if Lox.hadError: return
+        print(AstPrinter().print(expression))
 
     @staticmethod
     def runFile(path: str):
@@ -48,6 +58,13 @@ class Lox:
     def report(line: int, where: str, message: str):
         print("[line " + str(line) + "] Error" + where + ": " + message, flush=True)
         Lox.hadError = True
+
+    @staticmethod 
+    def error1(token: Token, message: str):
+        if token.type == TokenType.EOF:
+            Lox.report(token.line, " at end", message)
+        else:
+            Lox.report(token.line, f" at '{token.lexeme}'", message)
 
     hadError: bool = False
 
