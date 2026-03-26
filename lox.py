@@ -5,14 +5,15 @@ from tokentype import TokenType
 from expr import Expr
 from astPrinter import AstPrinter
 from typing import no_type_check
+
 class Lox:
 
     @staticmethod
     @no_type_check
     def run(source: str):
         from parser import Parser
-        scanner = Scanner(source)
-        tokens = scanner.scanTokens()
+        scanner: Scanner = Scanner(source)
+        tokens: list[Token] = scanner.scanTokens()
         #for token in tokens:
         #    print(token, flush=True)
         parser: Parser = Parser(tokens)
@@ -33,7 +34,7 @@ class Lox:
     def runPrompt():
         while True:
             try:
-                line = input("> ")
+                line: str = input("> ")
             except EOFError:
                 break
             if not line: break
