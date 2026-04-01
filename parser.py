@@ -107,7 +107,7 @@ class Parser:
     def synchronize(self) -> None:
         self.advance()
 
-        while self.isAtEnd():
+        while not self.isAtEnd():
             if self.previous().type == TokenType.SEMICOLON: return
 
             match(self.peek().type):
