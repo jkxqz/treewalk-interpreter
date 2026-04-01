@@ -1,16 +1,20 @@
 from tokentype import TokenType
 from token_ import Token
 from expr import *
-from typing import no_type_check, Optional
+from typing import Optional
 from lox import Lox
 
 class Parser:
 
     def __init__(self, tokens: list[Token]):
-        self.tokens : list[Token]= tokens
+        self.tokens : list[Token] = tokens
         self.current: int = 0
     
 
+    class ParseError(RuntimeError):
+        pass
+
+        
     def parse(self) -> Optional[Expr]:
         try:
             return self.expression()
@@ -18,26 +22,21 @@ class Parser:
             return None
 
 
-    class ParseError(RuntimeError):
-        pass
-        
 
     def expression(self) -> Expr:
         return self.equality()
     
 
-    @no_type_check
     def equality(self) -> Expr:
         expr: Expr = self.comparison()
 
         while (self._match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)):
             operator: Token = self.previous()
             right: Expr = self.comparison()
-            expr: Binary = Binary(expr, operator, right)
+            expr: Expr = Binary(expr, operator, right)
         return expr
     
 
-    @no_type_check
     def comparison(self) -> Expr:
         expr: Expr = self.term()
 
@@ -45,31 +44,29 @@ class Parser:
                            TokenType.LESS, TokenType.LESS_EQUAL):
             operator: Token = self.previous()
             right: Expr = self.term()
-            expr: Binary = Binary(expr, operator, right)
+            expr: Expr = Binary(expr, operator, right)
         
         return expr
     
 
-    @no_type_check
     def term(self) -> Expr:
         expr: Expr = self.factor()
 
         while self._match(TokenType.MINUS, TokenType.PLUS):
             operator: Token = self.previous()
             right: Expr = self.factor()
-            expr: Binary = Binary(expr, operator, right)
+            expr: Expr = Binary(expr, operator, right)
 
         return expr
 
 
-    @no_type_check
     def factor(self) -> Expr:
         expr: Expr = self.unary()
 
         while self._match(TokenType.SLASH, TokenType.STAR):
             operator: Token = self.previous()
             right: Expr = self.unary()
-            expr: Binary = Binary(expr, operator, right) 
+            expr: Expr = Binary(expr, operator, right) 
 
         return expr
     
@@ -91,7 +88,7 @@ class Parser:
             return Literal(self.previous().literal)
         if self._match(TokenType.LEFT_PAREN): 
             expr: Expr = self.expression()
-            self.consume(TokenType.RIGHT_PAREN, "Expext ')' after expression.")
+            self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
             return Grouping(expr)
         
         raise self.error(self.peek(), "Expect expression.")
