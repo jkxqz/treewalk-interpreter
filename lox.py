@@ -5,6 +5,8 @@ from tokentype import TokenType
 from expr import Expr
 from astPrinter import AstPrinter
 from typing import no_type_check
+from loxruntimeerror import LoxRuntimeError
+from interpreter import Interpreter
 
 class Lox:
 
@@ -14,12 +16,10 @@ class Lox:
         from parser import Parser
         scanner: Scanner = Scanner(source)
         tokens: list[Token] = scanner.scanTokens()
-        #for token in tokens:
-        #    print(token, flush=True)
         parser: Parser = Parser(tokens)
         expression: Expr = parser.parse()
         if Lox.hadError: return
-        print(AstPrinter().print(expression))
+        Lox.interpreter.interpret(expression)
 
     @staticmethod
     def runFile(path: str):
@@ -28,6 +28,7 @@ class Lox:
             _bytes: str = f.read()
         Lox.run(_bytes)
         if Lox.hadError: sys.exit(65)
+        if Lox.hadRuntimeError: sys.exit(70)
 
 
     @staticmethod
@@ -66,11 +67,16 @@ class Lox:
             Lox.report(token.line, " at end", message)
         else:
             Lox.report(token.line, f" at '{token.lexeme}'", message)
+    
+    @staticmethod
+    def runtimeError(error: LoxRuntimeError):
+        print(f"{error.args[0]}\n[line {error.token.line} ]")
+        Lox.hadRuntimeError = True
 
+    hadRuntimeError: bool = False
     hadError: bool = False
+    interpreter: Interpreter = Interpreter()
 
 if __name__ == "__main__":
     Lox.main(sys.argv[1:])
-    #def error(self, line: int, message: str):
-    #self.report(line, "", message)
     
