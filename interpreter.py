@@ -16,6 +16,12 @@ class Interpreter:
     def stringify(self, obj: object) -> str:
         if obj == None: return "nil"
 
+        if isinstance(obj, bool):
+            if obj:
+                return "true"
+            else:
+                return "false"
+    
         if isinstance(obj, float):
             text: str = str(obj)
             if text.endswith(".0"):
