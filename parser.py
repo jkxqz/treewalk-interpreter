@@ -1,8 +1,10 @@
+from typing import Optional
+
+from expr import *
+from lox import Lox
+from stmt import *
 from tokentype import TokenType
 from token_ import Token
-from expr import *
-from typing import Optional
-from lox import Lox
 
 class Parser:
 
@@ -10,23 +12,34 @@ class Parser:
         self.tokens : list[Token] = tokens
         self.current: int = 0
     
-
     class ParseError(RuntimeError):
         pass
-
         
-    def parse(self) -> Optional[Expr]:
-        try:
-            return self.expression()
-        except self.ParseError:
-            return None
+    def parse(self) -> list[Stmt]:
+        statements: list[Stmt] = []
+        while not self.isAtEnd():
+            statements.append(self.statement())
+        
+        return statements
 
+    def statement(self) -> Stmt:
+        if self._match(TokenType.PRINT): return self.printStatement()
 
+        return self.expressionStatement()
+    
+    def printStatement(self) -> Stmt:
+        value: Expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return PrintStmt(value)
+
+    def expressionStatement(self) -> Stmt:
+        expr: Expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+        return ExpressionStmt(expr)
 
     def expression(self) -> Expr:
         return self.equality()
     
-
     def equality(self) -> Expr:
         expr: Expr = self.comparison()
 
@@ -36,7 +49,6 @@ class Parser:
             expr: Expr = Binary(expr, operator, right)
         return expr
     
-
     def comparison(self) -> Expr:
         expr: Expr = self.term()
 
@@ -47,7 +59,6 @@ class Parser:
             expr: Expr = Binary(expr, operator, right)
         
         return expr
-    
 
     def term(self) -> Expr:
         expr: Expr = self.factor()
@@ -59,7 +70,6 @@ class Parser:
 
         return expr
 
-
     def factor(self) -> Expr:
         expr: Expr = self.unary()
 
@@ -69,7 +79,6 @@ class Parser:
             expr: Expr = Binary(expr, operator, right) 
 
         return expr
-    
 
     def unary(self) -> Expr:
         if self._match(TokenType.BANG, TokenType.MINUS):
@@ -78,7 +87,6 @@ class Parser:
             return Unary(operator, right)
         
         return self.primary()
-    
 
     def primary(self) -> Expr:
         if self._match(TokenType.FALSE): return Literal(False)
@@ -93,16 +101,13 @@ class Parser:
         
         raise self.error(self.peek(), "Expect expression.")
     
-
     def consume(self, _type: TokenType, message: str) -> Token:
         if self.check(_type): return self.advance()
         raise self.error(self.peek(), message)
-        
     
     def error(self, token: Token, message: str) -> ParseError:
         Lox.error1(token, message)
         return Parser.ParseError("Parser Error")
-    
 
     def synchronize(self) -> None:
         self.advance()
@@ -119,7 +124,6 @@ class Parser:
 
             self.advance()
 
-
     def _match(self, *types: TokenType) -> bool:
         for _type in types:
             if (self.check(_type)):
@@ -127,28 +131,22 @@ class Parser:
                 return True
         
         return False
-    
 
     def check(self, _type: TokenType) -> bool:
         if self.isAtEnd(): return False
         return self.peek().type == _type
-    
 
     def advance(self) -> Token:
         if not self.isAtEnd(): self.current += 1
         return self.previous()
-    
 
     def isAtEnd(self) -> bool:
         return self.peek().type == TokenType.EOF
 
-
     def peek(self) -> Token:
         return self.tokens[self.current]
-    
 
     def previous(self) -> Token:
         return self.tokens[self.current - 1]
-    
 
 

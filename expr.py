@@ -1,5 +1,6 @@
-from token_ import Token
 from abc import ABC, abstractmethod
+
+from token_ import Token
 
 class Expr(ABC):
 	@abstractmethod

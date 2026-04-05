@@ -1,14 +1,15 @@
 from expr import *
+from loxruntimeerror import LoxRuntimeError
+from stmt import *
 from tokentype import TokenType
 from token_ import Token
-from loxruntimeerror import LoxRuntimeError
 
 class Interpreter:
 
-    def interpret(self, expression: Expr) -> None:
+    def interpret(self, statements: list[Stmt]) -> None:
         try:
-            value: object = self.evaluate(expression)
-            print(self.stringify(value))
+            for statement in statements:
+                self.execute(statement)
         except LoxRuntimeError as error:
             from lox import Lox
             Lox.runtimeError(error)
@@ -32,6 +33,9 @@ class Interpreter:
 
     def evaluate(self, expr: Expr) -> object:
         return expr.accept(self)
+    
+    def execute(self, stmt: Stmt) -> None:
+        stmt.accept(self)
 
     def visitLiteralExpr(self, expr: Literal) -> object:
         return expr.value
@@ -102,6 +106,12 @@ class Interpreter:
             return [left, right]
         raise LoxRuntimeError(operator, "Operands must be numbers.")
 
+    def visitExpressionStmt(self, stmt: ExpressionStmt) -> None:
+        self.evaluate(stmt.expression)
+
+    def visitPrintStmt(self, stmt: PrintStmt) -> None:
+        value: object = self.evaluate(stmt.expression)
+        print(self.stringify(value))
 
         
         

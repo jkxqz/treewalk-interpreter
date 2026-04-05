@@ -1,12 +1,14 @@
 import sys
+from typing import no_type_check
+
+from astPrinter import AstPrinter
+from expr import *
+from interpreter import Interpreter
+from loxruntimeerror import LoxRuntimeError
 from scanner import Scanner
+from stmt import *
 from token_ import Token
 from tokentype import TokenType
-from expr import Expr
-from astPrinter import AstPrinter
-from typing import no_type_check
-from loxruntimeerror import LoxRuntimeError
-from interpreter import Interpreter
 
 class Lox:
 
@@ -17,9 +19,9 @@ class Lox:
         scanner: Scanner = Scanner(source)
         tokens: list[Token] = scanner.scanTokens()
         parser: Parser = Parser(tokens)
-        expression: Expr = parser.parse()
+        statements: list[Stmt] = parser.parse()
         if Lox.hadError: return
-        Lox.interpreter.interpret(expression)
+        Lox.interpreter.interpret(statements)
 
     @staticmethod
     def runFile(path: str):
@@ -29,7 +31,6 @@ class Lox:
         Lox.run(_bytes)
         if Lox.hadError: sys.exit(65)
         if Lox.hadRuntimeError: sys.exit(70)
-
 
     @staticmethod
     def runPrompt():
