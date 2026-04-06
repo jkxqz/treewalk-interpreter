@@ -154,5 +154,18 @@ class Interpreter:
     def visitVariableExpr(self, expr: Variable) -> object:
         return self.environment.get(expr.name)
 
+    def visitLogicalExpr(self, expr: Logical) -> object:
+        left: object = self.evaluate(expr.left)
+
+        if expr.operator.type == TokenType.OR:
+            if self.isTruthy(left): return left
+        else:
+            if not self.isTruthy(left): return left
+        
+        return self.evaluate(expr.right)
+    
+    def visitWhileStmt(self, stmt: WhileStmt) -> None:
+        while self.isTruthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.body)
         
         

@@ -42,3 +42,10 @@ class VarStmt(Stmt):
 	def accept(self, visitor):
 		return visitor.visitVarStmt(self)
 
+class WhileStmt(Stmt):
+	def __init__(self, condition: Expr, body: Stmt):
+		self.condition = condition
+		self.body = body
+	def accept(self, visitor):
+		return visitor.visitWhileStmt(self)
+

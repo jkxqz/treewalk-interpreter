@@ -13,6 +13,7 @@ class GenerateAst:
             "Binary     : self, left: Expr, operator: Token, right: Expr",
             "Grouping   : self, expression: Expr",
             "Literal    : self, value: object",
+            "Logical    : self, left: Expr, operator: Token, right: Expr",
             "Unary      : self, operator: Token, right: Expr",
             "Variable   : self, name: Token",
         ])
@@ -23,6 +24,7 @@ class GenerateAst:
             "IfStmt             : self, condition: Expr, thenBranch: Stmt, elseBranch: Optional[Stmt] = None",
             "PrintStmt          : self, expression: Expr",
             "VarStmt            : self, name: Token, initializer: Optional[Expr] = None",
+            "WhileStmt          : self, condition: Expr, body: Stmt",
         ])
 
     @staticmethod

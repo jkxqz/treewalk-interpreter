@@ -41,13 +41,49 @@ class Parser:
 
 
     def statement(self) -> Stmt:
+        if self._match(TokenType.FOR): return self.forStatement()
         if self._match(TokenType.IF): return self.ifStatement() 
-
         if self._match(TokenType.PRINT): return self.printStatement()
-
+        if self._match(TokenType.WHILE): return self.whileStatement()
         if self._match(TokenType.LEFT_BRACE): return BlockStmt(self.block())
 
         return self.expressionStatement()
+    
+    def forStatement(self) -> Stmt:
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.")
+
+        initializer: Optional[Stmt]
+        if self._match(TokenType.SEMICOLON):
+            initializer = None
+        elif self._match(TokenType.VAR):
+            initializer = self.varDeclaration()
+        else:
+            initializer = self.expressionStatement()
+        
+        condition: Optional[Expr] = None
+        if not self.check(TokenType.SEMICOLON):
+            condition = self.expression()
+        
+        self.consume(TokenType.SEMICOLON, "Expect ';' after loop condition.")
+
+        increment: Optional[Expr]
+        if not self.check(TokenType.RIGHT_PAREN):
+            increment = self.expression()
+
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
+
+        body: Stmt = self.statement()
+
+        if increment:
+            body = BlockStmt([body, ExpressionStmt(increment)])
+        
+        if condition == None: condition = Literal(True)
+        body = WhileStmt(condition, body)
+
+        if initializer:
+            body = BlockStmt([initializer, body])
+
+        return body
     
     def ifStatement(self) -> Stmt:
         self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
@@ -65,6 +101,14 @@ class Parser:
         value: Expr = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return PrintStmt(value)
+    
+    def whileStatement(self) -> Stmt:
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+        condition: Expr = self.expression()
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.")
+        body: Stmt = self.statement()
+
+        return WhileStmt(condition, body)
     
     def block(self) -> list[Optional[Stmt]]:
         statements: list[Optional[Stmt]] = []
@@ -84,7 +128,7 @@ class Parser:
         return self.assignment()
     
     def assignment(self) -> Expr:
-        expr: Expr = self.equality()
+        expr: Expr = self._or()
 
         if self._match(TokenType.EQUAL):
             equals: Token = self.previous()
@@ -97,7 +141,26 @@ class Parser:
             self.error(equals, "Invalid assignment target.")
         
         return expr
+    
+    def _or(self) -> Expr:
+        expr: Expr = self._and()
 
+        while self._match(TokenType.OR):
+            operator: Token = self.previous()
+            right: Expr = self._and()
+            expr = Logical(expr, operator, right)
+        
+        return expr
+    
+    def _and(self) -> Expr:
+        expr: Expr = self.equality()
+
+        while self._match(TokenType.AND):
+            operator: Token = self.previous()
+            right = self.equality()
+            expr = Logical(expr, operator, right)
+        
+        return expr
     
     def equality(self) -> Expr:
         expr: Expr = self.comparison()
