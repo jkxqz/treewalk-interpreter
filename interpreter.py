@@ -1,3 +1,5 @@
+from typing import cast
+
 from environment import Environment
 from expr import *
 from loxruntimeerror import LoxRuntimeError
@@ -37,8 +39,8 @@ class Interpreter:
     def evaluate(self, expr: Expr) -> object:
         return expr.accept(self)
     
-    def execute(self, stmt: Stmt) -> None:
-        stmt.accept(self)
+    def execute(self, stmt: Optional[Stmt]) -> None:
+        cast(Stmt, stmt).accept(self)
 
     def visitLiteralExpr(self, expr: Literal) -> object:
         return expr.value
@@ -128,10 +130,10 @@ class Interpreter:
         
         self.environment.define(stmt.name.lexeme, value)
     
-    def visitBlockStmt(self, stmt):
+    def visitBlockStmt(self, stmt: BlockStmt) -> None:
         self.executeBlock(stmt.statements, Environment(self.environment))
     
-    def executeBlock(self, statements: list[Stmt], environment: Environment):
+    def executeBlock(self, statements: list[Optional[Stmt]], environment: Environment) -> None:
         previous: Optional[Environment] = self.environment
 
         try:
@@ -142,7 +144,11 @@ class Interpreter:
         finally:
             self.environment = previous
         
-
+    def visitIfStmt(self, stmt: IfStmt) -> None:
+        if self.isTruthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.thenBranch)
+        elif stmt.elseBranch:
+            self.execute(stmt.elseBranch)
     
     def visitVariableExpr(self, expr: Variable) -> object:
         return self.environment.get(expr.name)

@@ -21,6 +21,14 @@ class ExpressionStmt(Stmt):
 	def accept(self, visitor):
 		return visitor.visitExpressionStmt(self)
 
+class IfStmt(Stmt):
+	def __init__(self, condition: Expr, thenBranch: Stmt, elseBranch: Optional[Stmt] = None):
+		self.condition = condition
+		self.thenBranch = thenBranch
+		self.elseBranch = elseBranch
+	def accept(self, visitor):
+		return visitor.visitIfStmt(self)
+
 class PrintStmt(Stmt):
 	def __init__(self, expression: Expr):
 		self.expression = expression

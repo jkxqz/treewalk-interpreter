@@ -20,6 +20,7 @@ class GenerateAst:
         GenerateAst.defineAst(outputDir, "Stmt",[
             "BlockStmt          : self, statements: list[Optional[Stmt]]",
             "ExpressionStmt     : self, expression: Expr",
+            "IfStmt             : self, condition: Expr, thenBranch: Stmt, elseBranch: Optional[Stmt] = None",
             "PrintStmt          : self, expression: Expr",
             "VarStmt            : self, name: Token, initializer: Optional[Expr] = None",
         ])
