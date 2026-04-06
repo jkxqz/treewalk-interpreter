@@ -1,3 +1,4 @@
+from environment import Environment
 from expr import *
 from loxruntimeerror import LoxRuntimeError
 from stmt import *
@@ -5,6 +6,8 @@ from tokentype import TokenType
 from token_ import Token
 
 class Interpreter:
+
+    environment: Environment = Environment()
 
     def interpret(self, statements: list[Stmt]) -> None:
         try:
@@ -90,6 +93,11 @@ class Interpreter:
             case TokenType.EQUAL_EQUAL:
                 return left == right
         return
+    
+    def visitAssignExpr(self, expr: Assign) -> object:
+        value: object = self.evaluate(expr.value)
+        self.environment.assign(expr.name, value)
+        return value
 
     def isTruthy(self, obj: object) -> bool:
         if obj == None: return False
@@ -112,6 +120,32 @@ class Interpreter:
     def visitPrintStmt(self, stmt: PrintStmt) -> None:
         value: object = self.evaluate(stmt.expression)
         print(self.stringify(value))
+    
+    def visitVarStmt(self, stmt: VarStmt) -> None:
+        value: object = None
+        if (stmt.initializer):
+            value = self.evaluate(stmt.initializer)
+        
+        self.environment.define(stmt.name.lexeme, value)
+    
+    def visitBlockStmt(self, stmt):
+        self.executeBlock(stmt.statements, Environment(self.environment))
+    
+    def executeBlock(self, statements: list[Stmt], environment: Environment):
+        previous: Optional[Environment] = self.environment
+
+        try:
+            self.environment = environment
+            
+            for statement in statements:
+                self.execute(statement)
+        finally:
+            self.environment = previous
+        
+
+    
+    def visitVariableExpr(self, expr: Variable) -> object:
+        return self.environment.get(expr.name)
 
         
         

@@ -7,6 +7,13 @@ class Expr(ABC):
 	def accept(self, visitor):
 		pass
 
+class Assign(Expr):
+	def __init__(self, name: Token, value: Expr):
+		self.name = name
+		self.value = value
+	def accept(self, visitor):
+		return visitor.visitAssignExpr(self)
+
 class Binary(Expr):
 	def __init__(self, left: Expr, operator: Token, right: Expr):
 		self.left = left
@@ -33,4 +40,10 @@ class Unary(Expr):
 		self.right = right
 	def accept(self, visitor):
 		return visitor.visitUnaryExpr(self)
+
+class Variable(Expr):
+	def __init__(self, name: Token):
+		self.name = name
+	def accept(self, visitor):
+		return visitor.visitVariableExpr(self)
 

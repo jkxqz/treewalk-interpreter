@@ -9,15 +9,19 @@ class GenerateAst:
             exit(64)
         outputDir: str = args[0]
         GenerateAst.defineAst(outputDir, "Expr",[
+            "Assign     : self, name: Token, value: Expr",
             "Binary     : self, left: Expr, operator: Token, right: Expr",
             "Grouping   : self, expression: Expr",
             "Literal    : self, value: object",
-            "Unary      : self, operator: Token, right: Expr"
+            "Unary      : self, operator: Token, right: Expr",
+            "Variable   : self, name: Token",
         ])
 
         GenerateAst.defineAst(outputDir, "Stmt",[
+            "BlockStmt          : self, statements: list[Optional[Stmt]]",
             "ExpressionStmt     : self, expression: Expr",
-            "PrintStmt          : self, expression: Expr"
+            "PrintStmt          : self, expression: Expr",
+            "VarStmt            : self, name: Token, initializer: Optional[Expr] = None",
         ])
 
     @staticmethod
@@ -25,9 +29,12 @@ class GenerateAst:
         import os
         path: str = os.path.join(outputDir, baseName.lower() + '.py')
         with open(path, 'w') as f:
-            f.write(f"from abc import ABC, abstractmethod\n\n")
-            if baseName != "Expr":
+            f.write(f"from abc import ABC, abstractmethod\n")
+            if baseName == "Stmt":
+                f.write(f"from typing import Optional\n\n")
                 f.write(f"from expr import Expr\n")
+            else:
+                f.write(f"\n")
             f.write(f"from token_ import Token\n\n")
             f.write(f"class {baseName}(ABC):\n")
             f.write("\t@abstractmethod\n")
