@@ -40,7 +40,8 @@ class Interpreter:
         return expr.accept(self)
     
     def execute(self, stmt: Optional[Stmt]) -> None:
-        cast(Stmt, stmt).accept(self)
+        if isinstance(stmt, Stmt): stmt.accept(self)
+        # fallthrough and do nothing if parser returned None instead of legal statement
 
     def visitLiteralExpr(self, expr: Literal) -> object:
         return expr.value
