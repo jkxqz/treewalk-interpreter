@@ -1,15 +1,31 @@
+from time import time
 from typing import cast
 
 from environment import Environment
 from expr import *
+#from loxcallable import LoxCallable
+#from loxfunction import LoxFunction
 from loxruntimeerror import LoxRuntimeError
+from return_ import Return
 from stmt import *
 from tokentype import TokenType
 from token_ import Token
 
 class Interpreter:
 
-    environment: Environment = Environment()
+    _globals: Environment = Environment()
+
+    environment: Environment = _globals
+
+    def __init__(self):
+        from loxcallable import LoxCallable
+        self._globals.define("clock", 
+            type("", (LoxCallable,), 
+                { "arity"   : lambda self: 0,
+                  "call"    : lambda self, interpreter, arguments: time(),
+                  "__str__" : lambda self: "<native fn>"
+                })()
+            )
 
     def interpret(self, statements: list[Stmt]) -> None:
         try:
@@ -168,4 +184,33 @@ class Interpreter:
         while self.isTruthy(self.evaluate(stmt.condition)):
             self.execute(stmt.body)
         
+    def visitCallExpr(self, expr) -> object:
+        callee: object = self.evaluate(expr.callee)
+
+        arguments: list[object] = []
+        for argument in expr.arguments:
+            arguments.append(self.evaluate(argument))
+        
+        from loxcallable import LoxCallable
+        if not isinstance(callee, LoxCallable):
+            raise LoxRuntimeError(expr.paren, "Can only call functions and classes.")
+
+        function: LoxCallable = callee
+
+        if len(arguments) != function.arity():
+            raise LoxRuntimeError(expr.paren, 
+                f"Expected {function.arity()} arguments but got {len(arguments)}.")
+
+        return function.call(self, arguments)
+    
+    def visitFunctionStmt(self, stmt: FunctionStmt) -> None:
+        from loxfunction import LoxFunction
+        function: LoxFunction = LoxFunction(stmt, self.environment)
+        self.environment.define(stmt.name.lexeme, function)
+    
+    def visitReturnStmt(self, stmt: ReturnStmt) -> None:
+        value: object = None
+        if (stmt.value != None): value = self.evaluate(stmt.value)
+
+        raise Return(value)
         

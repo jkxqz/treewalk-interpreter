@@ -21,6 +21,14 @@ class ExpressionStmt(Stmt):
 	def accept(self, visitor):
 		return visitor.visitExpressionStmt(self)
 
+class FunctionStmt(Stmt):
+	def __init__(self, name: Token, params: list[Token], body: list[Optional[Stmt]]):
+		self.name = name
+		self.params = params
+		self.body = body
+	def accept(self, visitor):
+		return visitor.visitFunctionStmt(self)
+
 class IfStmt(Stmt):
 	def __init__(self, condition: Expr, thenBranch: Stmt, elseBranch: Optional[Stmt] = None):
 		self.condition = condition
@@ -34,6 +42,13 @@ class PrintStmt(Stmt):
 		self.expression = expression
 	def accept(self, visitor):
 		return visitor.visitPrintStmt(self)
+
+class ReturnStmt(Stmt):
+	def __init__(self, keyword: Token, value: Optional[Expr]):
+		self.keyword = keyword
+		self.value = value
+	def accept(self, visitor):
+		return visitor.visitReturnStmt(self)
 
 class VarStmt(Stmt):
 	def __init__(self, name: Token, initializer: Optional[Expr] = None):

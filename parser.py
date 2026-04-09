@@ -24,12 +24,31 @@ class Parser:
     
     def declaration(self) -> Optional[Stmt]:
         try:
+            if self._match(TokenType.FUN): return self.function("function")
             if self._match(TokenType.VAR): return self.varDeclaration()
             return self.statement()
         except self.ParseError:
             self.synchronize()
             return None
     
+    def function(self, kind: str) -> FunctionStmt:
+        name: Token = self.consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
+        self.consume(TokenType.LEFT_PAREN, f"Expect '(' after {kind} name.")
+        parameters: list[Token] = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            parameters.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
+            while self._match(TokenType.COMMA):
+                if len(parameters) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 parameters.")
+                parameters.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
+        
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+
+        self.consume(TokenType.LEFT_BRACE, f"Expect '{{' before {kind} body.")
+        body: list[Optional[Stmt]] = self.block()
+        return FunctionStmt(name, parameters, body)
+    
+
     def varDeclaration(self) -> Stmt:
         name: Token = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
         
@@ -46,6 +65,7 @@ class Parser:
         if self._match(TokenType.PRINT): return self.printStatement()
         if self._match(TokenType.WHILE): return self.whileStatement()
         if self._match(TokenType.LEFT_BRACE): return BlockStmt(self.block())
+        if self._match(TokenType.RETURN): return self.returnStatement()
 
         return self.expressionStatement()
     
@@ -118,6 +138,15 @@ class Parser:
         
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
         return statements
+    
+    def returnStatement(self) -> Stmt:
+        keyword: Token = self.previous()
+        value: Optional[Expr] = None
+        if not self.check(TokenType.SEMICOLON):
+            value = self.expression()
+        
+        self.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+        return ReturnStmt(keyword, value)
 
     def expressionStatement(self) -> Stmt:
         expr: Expr = self.expression()
@@ -208,7 +237,33 @@ class Parser:
             right: Expr = self.unary()
             return Unary(operator, right)
         
-        return self.primary()
+        return self.call()
+    
+    def call(self) -> Expr:
+        expr: Expr = self.primary()
+
+        while True:
+            if self._match(TokenType.LEFT_PAREN):
+                expr = self.finishCall(expr)
+            else: 
+                break
+        
+        return expr
+    
+    def finishCall(self, callee: Expr) -> Expr:
+        arguments: list[Expr] = []
+
+        if not self.check(TokenType.RIGHT_PAREN):
+            arguments.append(self.expression())
+            while self._match(TokenType.COMMA):
+                if len(arguments) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 arguments.")
+                arguments.append(self.expression())
+        
+        paren: Token = self.consume(TokenType.RIGHT_PAREN, 
+                                    "Expect ')' after arguments.")
+        
+        return Call(callee, paren, arguments)
 
     def primary(self) -> Expr:
         if self._match(TokenType.FALSE): return Literal(False)

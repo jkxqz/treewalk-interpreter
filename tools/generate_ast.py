@@ -11,6 +11,7 @@ class GenerateAst:
         GenerateAst.defineAst(outputDir, "Expr",[
             "Assign     : self, name: Token, value: Expr",
             "Binary     : self, left: Expr, operator: Token, right: Expr",
+            "Call       : self, callee: Expr, paren: Token, arguments: list[Expr]",
             "Grouping   : self, expression: Expr",
             "Literal    : self, value: object",
             "Logical    : self, left: Expr, operator: Token, right: Expr",
@@ -21,8 +22,10 @@ class GenerateAst:
         GenerateAst.defineAst(outputDir, "Stmt",[
             "BlockStmt          : self, statements: list[Optional[Stmt]]",
             "ExpressionStmt     : self, expression: Expr",
+            "FunctionStmt       : self, name: Token, params: list[Token], body: list[Optional[Stmt]]",
             "IfStmt             : self, condition: Expr, thenBranch: Stmt, elseBranch: Optional[Stmt] = None",
             "PrintStmt          : self, expression: Expr",
+            "ReturnStmt         : self, keyword: Token, value: Optional[Expr]",
             "VarStmt            : self, name: Token, initializer: Optional[Expr] = None",
             "WhileStmt          : self, condition: Expr, body: Stmt",
         ])

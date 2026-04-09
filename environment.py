@@ -7,9 +7,8 @@ type Env = Environment
 
 class Environment:
 
-    values: dict[str, object] = {}
-
     def __init__(self, enclosing: Optional[Env] = None):
+        self.values: dict[str, object] = {}
         self.enclosing: Optional[Env] = enclosing
 
     def assign(self, name: Token, value: object) -> None:
