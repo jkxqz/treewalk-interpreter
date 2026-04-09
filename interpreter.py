@@ -142,7 +142,7 @@ class Interpreter:
     
     def visitVarStmt(self, stmt: VarStmt) -> None:
         value: object = None
-        if (stmt.initializer):
+        if (stmt.initializer != None):
             value = self.evaluate(stmt.initializer)
         
         self.environment.define(stmt.name.lexeme, value)
@@ -164,7 +164,7 @@ class Interpreter:
     def visitIfStmt(self, stmt: IfStmt) -> None:
         if self.isTruthy(self.evaluate(stmt.condition)):
             self.execute(stmt.thenBranch)
-        elif stmt.elseBranch:
+        elif stmt.elseBranch != None:
             self.execute(stmt.elseBranch)
     
     def visitVariableExpr(self, expr: Variable) -> object:
