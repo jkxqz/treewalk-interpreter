@@ -5,6 +5,7 @@ from astPrinter import AstPrinter
 from expr import *
 from interpreter import Interpreter
 from loxruntimeerror import LoxRuntimeError
+from resolver import Resolver
 from scanner import Scanner
 from stmt import *
 from token_ import Token
@@ -20,6 +21,9 @@ class Lox:
         tokens: list[Token] = scanner.scanTokens()
         parser: Parser = Parser(tokens)
         statements: list[Stmt] = parser.parse()
+        if Lox.hadError: return
+        resolver: Resolver = Resolver(Lox.interpreter)
+        resolver.resolveList(statements)
         if Lox.hadError: return
         Lox.interpreter.interpret(statements)
 

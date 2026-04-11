@@ -14,6 +14,7 @@ from token_ import Token
 class Interpreter:
 
     _globals: Environment = Environment()
+    _locals: dict[Expr, int] = {}
 
     environment: Environment = _globals
 
@@ -58,6 +59,9 @@ class Interpreter:
     def execute(self, stmt: Optional[Stmt]) -> None:
         if isinstance(stmt, Stmt): stmt.accept(self)
         # fallthrough and do nothing if parser returned None instead of legal statement
+    
+    def resolve(self, expr: Expr, depth: int) -> None:
+        self._locals[expr] = depth
 
     def visitLiteralExpr(self, expr: Literal) -> object:
         return expr.value
@@ -115,7 +119,13 @@ class Interpreter:
     
     def visitAssignExpr(self, expr: Assign) -> object:
         value: object = self.evaluate(expr.value)
-        self.environment.assign(expr.name, value)
+
+        distance: Optional[int] = self._locals.get(expr)
+        if distance != None:
+            self.environment.assignAt(distance, expr.name, value)
+        else:
+            self._globals.assign(expr.name, value)
+
         return value
 
     def isTruthy(self, obj: object) -> bool:
@@ -168,7 +178,14 @@ class Interpreter:
             self.execute(stmt.elseBranch)
     
     def visitVariableExpr(self, expr: Variable) -> object:
-        return self.environment.get(expr.name)
+        return self.lookUpVariable(expr.name, expr)
+    
+    def lookUpVariable(self, name: Token, expr: Expr) -> object:
+        distance: Optional[int] = self._locals.get(expr)
+        if distance != None:
+            return self.environment.getAt(distance, name.lexeme)
+        else:
+            return self._globals.get(name)
 
     def visitLogicalExpr(self, expr: Logical) -> object:
         left: object = self.evaluate(expr.left)
