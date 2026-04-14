@@ -29,6 +29,13 @@ class FunctionStmt(Stmt):
 	def accept(self, visitor):
 		return visitor.visitFunctionStmt(self)
 
+class ClassStmt(Stmt):
+	def __init__(self, name: Token, methods: list[FunctionStmt]):
+		self.name = name
+		self.methods = methods
+	def accept(self, visitor):
+		return visitor.visitClassStmt(self)
+
 class IfStmt(Stmt):
 	def __init__(self, condition: Expr, thenBranch: Stmt, elseBranch: Optional[Stmt] = None):
 		self.condition = condition

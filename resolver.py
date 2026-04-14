@@ -8,6 +8,12 @@ from token_ import Token
 class FunctionType(Enum):
     NONE        = auto()
     FUNCTION    = auto()
+    INITIALIZER = auto()
+    METHOD      = auto()
+
+class ClassType(Enum):
+    NONE        = auto()
+    CLASS       = auto()
 
 class Resolver:
 
@@ -15,11 +21,32 @@ class Resolver:
         self.interpreter: Interpreter = interpreter
         self.scopes: list[dict[str, bool]] = []
         self.currentFunction: FunctionType = FunctionType.NONE
+        self.currentClass: ClassType = ClassType.NONE
     
     def visitBlockStmt(self, stmt: BlockStmt) -> None:
         self.beginScope()
         self.resolveList(stmt.statements)
         self.endScope()
+    
+    def visitClassStmt(self, stmt: ClassStmt) -> None:
+        enclosingClass: ClassType = self.currentClass
+        self.currentClass = ClassType.CLASS
+
+        self.declare(stmt.name)
+        self.define(stmt.name)
+
+        self.beginScope()
+        self.scopes[-1]["this"] = True
+        
+        for method in stmt.methods:
+            declaration: FunctionType = FunctionType.METHOD
+            if method.name.lexeme == "init":
+                declaration = FunctionType.INITIALIZER
+            self.resolveFunction(method, declaration)
+        
+        self.endScope()
+
+        self.currentClass = enclosingClass
     
     def visitExpressionStmt(self, stmt: ExpressionStmt) -> None:
         self.resolveExpr(stmt.expression)
@@ -43,6 +70,8 @@ class Resolver:
             from lox import Lox
             Lox.error1(stmt.keyword, "Can't return from top-level code.")
         if stmt.value != None:
+            if self.currentFunction == FunctionType.INITIALIZER:
+                Lox.error1(stmt.keyword, "Can't return a value from an initializer.")
             self.resolveExpr(stmt.value)
     
     def visitVarStmt(self, stmt: VarStmt) -> None:
@@ -70,6 +99,9 @@ class Resolver:
         for argument in expr.arguments:
             self.resolveExpr(argument)
     
+    def visitGetExpr(self, expr: Get)-> None:
+        self.resolveExpr(expr.obj)
+    
     def visitGroupingExpr(self, expr: Grouping) -> None:
         self.resolveExpr(expr.expression)
     
@@ -79,6 +111,17 @@ class Resolver:
     def visitLogicalExpr(self, expr: Logical) -> None:
         self.resolveExpr(expr.left)
         self.resolveExpr(expr.right)
+    
+    def visitSetExpr(self, expr: Set) -> None:
+        self.resolveExpr(expr.value)
+        self.resolveExpr(expr.obj)
+    
+    def visitThisExpr(self, expr: This) -> None:
+        from lox import Lox
+        if self.currentClass == ClassType.NONE:
+            Lox.error1(expr.keyword, "Can't use 'this' outside of a class.")
+            return None
+        self.resolveLocal(expr, expr.keyword)
 
     def visitUnaryExpr(self, expr: Unary) -> None:
         self.resolveExpr(expr.right)

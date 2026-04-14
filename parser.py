@@ -24,12 +24,25 @@ class Parser:
     
     def declaration(self) -> Optional[Stmt]:
         try:
+            if self._match(TokenType.CLASS): return self.classDeclaration()
             if self._match(TokenType.FUN): return self.function("function")
             if self._match(TokenType.VAR): return self.varDeclaration()
             return self.statement()
         except self.ParseError:
             self.synchronize()
             return None
+    
+    def classDeclaration(self) -> Stmt:
+        name: Token = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+        self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+        methods: list[FunctionStmt] = []
+        while not self.check(TokenType.RIGHT_BRACE) and not self.isAtEnd():
+            methods.append(self.function("method"))
+        
+        self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+
+        return ClassStmt(name, methods)
     
     def function(self, kind: str) -> FunctionStmt:
         name: Token = self.consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
@@ -166,6 +179,8 @@ class Parser:
             if isinstance(expr, Variable):
                 name: Token = expr.name
                 return Assign(name, value)
+            elif isinstance(expr, Get):
+                return Set(expr.obj, expr.name, value)
             
             self.error(equals, "Invalid assignment target.")
         
@@ -245,6 +260,10 @@ class Parser:
         while True:
             if self._match(TokenType.LEFT_PAREN):
                 expr = self.finishCall(expr)
+            elif self._match(TokenType.DOT):
+                name: Token = self.consume(TokenType.IDENTIFIER, 
+                                           "Expect property name after '.'.")
+                expr = Get(expr, name)
             else: 
                 break
         
@@ -272,6 +291,7 @@ class Parser:
         if self._match(TokenType.NUMBER, TokenType.STRING): 
             return Literal(self.previous().literal)
         if self._match(TokenType.IDENTIFIER): return Variable(self.previous())
+        if self._match(TokenType.THIS): return This(self.previous())
         if self._match(TokenType.LEFT_PAREN): 
             expr: Expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
