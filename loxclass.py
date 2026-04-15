@@ -7,15 +7,21 @@ from loxcallable import LoxCallable
 if TYPE_CHECKING:
     from loxfunction import LoxFunction
 
+type LC = LoxClass
+
 class LoxClass(LoxCallable):
     
-    def __init__(self, name: str, methods: dict[str, "LoxFunction"]):
+    def __init__(self, name: str, superclass: Optional[LC], methods: dict[str, "LoxFunction"]):
+        self.superclass = superclass
         self.name       = name
         self.methods    = methods
     
     def findMethod(self, name: str) -> Optional["LoxFunction"]:
         if name in self.methods.keys():
             return self.methods[name]
+        
+        if self.superclass != None:
+            return self.superclass.findMethod(name)
 
         return None
     

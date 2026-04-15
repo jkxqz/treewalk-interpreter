@@ -17,6 +17,7 @@ class GenerateAst:
             "Literal    : self, value: object",
             "Logical    : self, left: Expr, operator: Token, right: Expr",
             "Set        : self, obj: Expr, name: Token, value: Expr",
+            "Super      : self, keyword: Token, method: Token",
             "This       : self, keyword: Token",
             "Unary      : self, operator: Token, right: Expr",
             "Variable   : self, name: Token",
@@ -26,7 +27,7 @@ class GenerateAst:
             "BlockStmt          : self, statements: list[Optional[Stmt]]",
             "ExpressionStmt     : self, expression: Expr",
             "FunctionStmt       : self, name: Token, params: list[Token], body: list[Optional[Stmt]]",
-            "ClassStmt          : self, name: Token, methods: list[FunctionStmt]",
+            "ClassStmt          : self, name: Token, superclass: Optional[Variable], methods: list[FunctionStmt]",
             "IfStmt             : self, condition: Expr, thenBranch: Stmt, elseBranch: Optional[Stmt] = None",
             "PrintStmt          : self, expression: Expr",
             "ReturnStmt         : self, keyword: Token, value: Optional[Expr]",
@@ -42,7 +43,7 @@ class GenerateAst:
             f.write(f"from abc import ABC, abstractmethod\n")
             if baseName == "Stmt":
                 f.write(f"from typing import Optional\n\n")
-                f.write(f"from expr import Expr\n")
+                f.write(f"from expr import *\n")
             else:
                 f.write(f"\n")
             f.write(f"from token_ import Token\n\n")

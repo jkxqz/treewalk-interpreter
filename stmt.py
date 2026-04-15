@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from expr import Expr
+from expr import *
 from token_ import Token
 
 class Stmt(ABC):
@@ -30,8 +30,9 @@ class FunctionStmt(Stmt):
 		return visitor.visitFunctionStmt(self)
 
 class ClassStmt(Stmt):
-	def __init__(self, name: Token, methods: list[FunctionStmt]):
+	def __init__(self, name: Token, superclass: Optional[Variable], methods: list[FunctionStmt]):
 		self.name = name
+		self.superclass = superclass
 		self.methods = methods
 	def accept(self, visitor):
 		return visitor.visitClassStmt(self)

@@ -159,7 +159,23 @@ class Interpreter:
         self.executeBlock(stmt.statements, Environment(self.environment))
     
     def visitClassStmt(self, stmt: ClassStmt) -> None:
+        superclass: object = None
+        if stmt.superclass != None:
+            superclass = self.evaluate(stmt.superclass)
+            from loxclass import LoxClass
+            if not isinstance(superclass, LoxClass):
+                raise RuntimeError(stmt.superclass.name,
+                                   "Superclass must be a class.")
+        
+        from loxclass import LoxClass
+        cast(Optional[LoxClass], superclass)
+
         self.environment.define(stmt.name.lexeme, None)
+
+        if stmt.superclass != None:
+            self.environment = Environment(self.environment)
+            self.environment.define("super", superclass)
+
         from loxfunction import LoxFunction
         methods: dict[str, LoxFunction] = {}
         for method in stmt.methods:
@@ -167,8 +183,12 @@ class Interpreter:
                                                 method.name.lexeme=="init")
             methods[method.name.lexeme] = function
         
-        from loxclass import LoxClass
-        klass: LoxClass = LoxClass(stmt.name.lexeme, methods)
+        klass: LoxClass = LoxClass(stmt.name.lexeme, superclass, methods)
+
+        if superclass != None:
+            if isinstance(self.environment.enclosing, Environment):
+                self.environment = self.environment.enclosing
+
         self.environment.assign(stmt.name, klass)
     
     def executeBlock(self, statements: list[Optional[Stmt]], environment: Environment) -> None:
@@ -218,6 +238,24 @@ class Interpreter:
         value: object = self.evaluate(expr.value)
         obj.set(expr.name, value)
         return value
+    
+    def visitSuperExpr(self, expr: Super) -> object:
+        distance: int = cast(int, self._locals.get(expr))
+        from loxclass import LoxClass
+        superclass: LoxClass = cast(LoxClass, self.environment.getAt(distance, "super"))
+
+        from loxinstance import LoxInstance
+        obj: LoxInstance = cast(LoxInstance, self.environment.getAt(distance-1, "this"))
+
+        from loxfunction import LoxFunction
+        method: LoxFunction = cast(LoxFunction, superclass.findMethod(expr.method.lexeme))
+        
+        if method == None:
+            raise RuntimeError(expr.method,
+                               f"Undefined property {expr.method.lexeme}.")
+
+        return method.bind(obj)
+
     
     def visitThisExpr(self, expr: This) -> object:
         return self.lookUpVariable(expr.keyword, expr)
