@@ -13,75 +13,69 @@ from tokentype import TokenType
 
 class Lox:
 
-    @staticmethod
-    @no_type_check
-    def run(source: str):
-        from parser import Parser
-        scanner: Scanner = Scanner(source)
-        tokens: list[Token] = scanner.scanTokens()
-        parser: Parser = Parser(tokens)
-        statements: list[Stmt] = parser.parse()
-        if Lox.hadError: return
-        resolver: Resolver = Resolver(Lox.interpreter)
-        resolver.resolveList(statements)
-        if Lox.hadError: return
-        Lox.interpreter.interpret(statements)
+    def __init__(self):
+        self.hadRuntimeError: bool = False
+        self.hadError: bool = False
+        self.interpreter: Interpreter = Interpreter(self)
 
-    @staticmethod
-    def runFile(path: str):
+    @no_type_check
+    def run(self, source: str):
+        from parser import Parser
+        scanner: Scanner = Scanner(self, source)
+        tokens: list[Token] = scanner.scanTokens()
+        parser: Parser = Parser(self, tokens)
+        statements: list[Stmt] = parser.parse()
+        if self.hadError: return
+        resolver: Resolver = Resolver(self, self.interpreter)
+        resolver.resolveList(statements)
+        if self.hadError: return
+        self.interpreter.interpret(statements)
+
+    def runFile(self, path: str):
         # read entire file as one string
         with open(path, 'r') as f:
             _bytes: str = f.read()
-        Lox.run(_bytes)
-        if Lox.hadError: sys.exit(65)
-        if Lox.hadRuntimeError: sys.exit(70)
+        self.run(_bytes)
+        if self.hadError: sys.exit(65)
+        if self.hadRuntimeError: sys.exit(70)
 
-    @staticmethod
-    def runPrompt():
+    def runPrompt(self):
         while True:
             try:
                 line: str = input("> ")
             except EOFError:
                 break
             if not line: break
-            Lox.run(line)
-            Lox.hadError = False
+            self.run(line)
+            self.hadError = False
 
-    @staticmethod
-    def main(args: list[str]):
+    def main(self, args: list[str]):
         if len(args) > 1:
             print("Usage: lox [script]", flush=True)
             exit(64) # exit code taken from book
         elif len(args) == 1:
-            Lox.runFile(args[0])
+            self.runFile(args[0])
         else:
-            Lox.runPrompt()
+            self.runPrompt()
     
-    @staticmethod 
-    def error(line: int, message: str):
-        Lox.report(line, "", message)
+    def error(self, line: int, message: str):
+        self.report(line, "", message)
     
-    @staticmethod
-    def report(line: int, where: str, message: str):
+    def report(self, line: int, where: str, message: str):
         print("[line " + str(line) + "] Error" + where + ": " + message, flush=True)
-        Lox.hadError = True
+        self.hadError = True
 
-    @staticmethod 
-    def error1(token: Token, message: str):
+    def error1(self, token: Token, message: str):
         if token.type == TokenType.EOF:
-            Lox.report(token.line, " at end", message)
+            self.report(token.line, " at end", message)
         else:
-            Lox.report(token.line, f" at '{token.lexeme}'", message)
+            self.report(token.line, f" at '{token.lexeme}'", message)
     
-    @staticmethod
-    def runtimeError(error: LoxRuntimeError):
+    def runtimeError(self, error: LoxRuntimeError):
         print(f"{error.args[0]}\n[line {error.token.line} ]")
-        Lox.hadRuntimeError = True
+        self.hadRuntimeError = True
 
-    hadRuntimeError: bool = False
-    hadError: bool = False
-    interpreter: Interpreter = Interpreter()
 
 if __name__ == "__main__":
-    Lox.main(sys.argv[1:])
+    Lox().main(sys.argv[1:])
     

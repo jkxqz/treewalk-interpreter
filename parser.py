@@ -1,14 +1,17 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lox import Lox
 
 from expr import *
-from lox import Lox
 from stmt import *
 from tokentype import TokenType
 from token_ import Token
 
 class Parser:
 
-    def __init__(self, tokens: list[Token]):
+    def __init__(self, lox: "Lox", tokens: list[Token]):
+        self.lox: "Lox" = lox
         self.tokens : list[Token] = tokens
         self.current: int = 0
     
@@ -318,7 +321,7 @@ class Parser:
         raise self.error(self.peek(), message)
     
     def error(self, token: Token, message: str) -> ParseError:
-        Lox.error1(token, message)
+        self.lox.error1(token, message)
         return Parser.ParseError("Parser Error")
 
     def synchronize(self) -> None:

@@ -1,3 +1,8 @@
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lox import Lox
+
 from token_ import Token
 from tokentype import TokenType
 
@@ -22,7 +27,8 @@ class Scanner:
         "while":    TokenType.WHILE,
     }
 
-    def __init__(self, source: str):
+    def __init__(self, lox: "Lox", source: str):
+        self.lox    : "Lox" = lox
         self.source : str = source
         self.tokens : list[Token] = []
         self.start  : int = 0
@@ -83,8 +89,7 @@ class Scanner:
                 elif self.isAlpha(c):
                     self.identifier()
                 else:
-                    from lox import Lox
-                    Lox.error(self.line, "Unexpected character.")
+                    self.lox.error(self.line, "Unexpected character.")
     
     def isAlpha(self, c: str) -> bool:
         return ('a' <= c <= 'z') or ('A' <= c <= 'Z') or (c=='_')
@@ -123,8 +128,7 @@ class Scanner:
             if self.peek() == '\n': self.line += 1
             self.advance()
         if self.isAtEnd():
-            from lox import Lox
-            Lox.error(self.line, "Unterminated string.")
+            self.lox.error(self.line, "Unterminated string.")
             return
         self.advance() # the closing "
         # trim surrounding quotes

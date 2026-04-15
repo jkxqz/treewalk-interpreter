@@ -1,5 +1,8 @@
 from time import time
-from typing import cast
+from typing import cast, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lox import Lox
 
 from environment import Environment
 from expr import *
@@ -16,7 +19,8 @@ class Interpreter:
 
     environment: Environment = _globals
 
-    def __init__(self):
+    def __init__(self, lox: "Lox"):
+        self.lox: "Lox" = lox
         from loxcallable import LoxCallable
         self._globals.define("clock", 
             type("", (LoxCallable,), 
@@ -31,8 +35,7 @@ class Interpreter:
             for statement in statements:
                 self.execute(statement)
         except LoxRuntimeError as error:
-            from lox import Lox
-            Lox.runtimeError(error)
+            self.lox.runtimeError(error)
     
     def stringify(self, obj: object) -> str:
         if obj == None: return "nil"

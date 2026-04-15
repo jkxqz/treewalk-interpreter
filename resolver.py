@@ -1,4 +1,8 @@
 from enum import Enum, auto
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lox import Lox
 
 from expr import *
 from interpreter import Interpreter
@@ -18,7 +22,8 @@ class ClassType(Enum):
 
 class Resolver:
 
-    def __init__(self, interpreter: Interpreter):
+    def __init__(self, lox: "Lox", interpreter: Interpreter):
+        self.lox: "Lox" = lox
         self.interpreter: Interpreter = interpreter
         self.scopes: list[dict[str, bool]] = []
         self.currentFunction: FunctionType = FunctionType.NONE
@@ -37,8 +42,7 @@ class Resolver:
         self.define(stmt.name)
 
         if stmt.superclass != None and stmt.name.lexeme == stmt.superclass.name.lexeme:
-            from lox import Lox
-            Lox.error1(stmt.superclass.name,
+            self.lox.error1(stmt.superclass.name,
                       "A class can't inherit from itself.")
 
         if stmt.superclass != None:
@@ -83,11 +87,10 @@ class Resolver:
     
     def visitReturnStmt(self, stmt: ReturnStmt) -> None:
         if self.currentFunction == FunctionType.NONE:
-            from lox import Lox
-            Lox.error1(stmt.keyword, "Can't return from top-level code.")
+            self.lox.error1(stmt.keyword, "Can't return from top-level code.")
         if stmt.value != None:
             if self.currentFunction == FunctionType.INITIALIZER:
-                Lox.error1(stmt.keyword, "Can't return a value from an initializer.")
+                self.lox.error1(stmt.keyword, "Can't return a value from an initializer.")
             self.resolveExpr(stmt.value)
     
     def visitVarStmt(self, stmt: VarStmt) -> None:
@@ -134,20 +137,17 @@ class Resolver:
     
     def visitSuperExpr(self, expr: Super) -> None:
         if self.currentClass == ClassType.NONE:
-            from lox import Lox
-            Lox.error1(expr.keyword,
+            self.lox.error1(expr.keyword,
                       "Can't use 'super' outside of a class.")
         elif self.currentClass != ClassType.SUBCLASS:
-            from lox import Lox
-            Lox.error1(expr.keyword,
+            self.lox.error1(expr.keyword,
                       "Can't use 'super' in a class with no superclass.")
             
         self.resolveLocal(expr, expr.keyword)
     
     def visitThisExpr(self, expr: This) -> None:
-        from lox import Lox
         if self.currentClass == ClassType.NONE:
-            Lox.error1(expr.keyword, "Can't use 'this' outside of a class.")
+            self.lox.error1(expr.keyword, "Can't use 'this' outside of a class.")
             return None
         self.resolveLocal(expr, expr.keyword)
 
@@ -156,8 +156,7 @@ class Resolver:
     
     def visitVariableExpr(self, expr: Variable) -> None:
         if self.scopes and self.scopes[-1].get(expr.name.lexeme) == False:
-            from lox import Lox
-            Lox.error1(expr.name, "Can't read local variable in its own initializer.")
+            self.lox.error1(expr.name, "Can't read local variable in its own initializer.")
 
         self.resolveLocal(expr, expr.name)
     
@@ -196,8 +195,7 @@ class Resolver:
 
         scope: dict[str, bool] = self.scopes[-1]
         if name.lexeme in scope.keys():
-            from lox import Lox
-            Lox.error1(name, "Already a variable with this name in this scope.")
+            self.lox.error1(name, "Already a variable with this name in this scope.")
         scope[name.lexeme] = False
     
     def define(self, name: Token) -> None:
